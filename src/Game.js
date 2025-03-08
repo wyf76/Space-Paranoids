@@ -4,9 +4,9 @@ class Game extends Phaser.Scene {
     }
 
     preload() {
-        this.load.tilemapTiledJSON('map', 'assets/Map.tmx');
-        this.load.image('tiles', 'assets/kenney_top-down-tanks/Tilesheet/terrainTiles_default.png');
-        this.load.spritesheet('enemy', 'assets/kenney_top-down-tanks/Spritesheet/allSprites_default.png', { frameWidth: 32, frameHeight: 32 });
+        this.load.tilemapTiledJSON('map', '/assets/Map.tmx');
+        this.load.image('tiles', '/assets/kenney_top-down-tanks/Tilesheet/terrainTiles_default.png');
+        this.load.spritesheet('enemy', '/assets/kenney_top-down-tanks/Spritesheet/allSprites_default.png', { frameWidth: 32, frameHeight: 32 });
     }
 
     create() {
