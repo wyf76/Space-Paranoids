@@ -3,40 +3,34 @@ class Game extends Phaser.Scene {
         super({ key: 'Game' });
     }
 
+    preload() {
+        this.load.tilemapTiledJSON('map', 'assets/Map.tmx');
+        this.load.image('tiles', 'assets/kenney_top-down-tanks/Tilesheet/terrainTiles_default.png');
+        this.load.spritesheet('enemy', 'assets/kenney_top-down-tanks/Spritesheet/allSprites_default.png', { frameWidth: 32, frameHeight: 32 });
+    }
+
     create() {
-        this.player = this.physics.add.sprite(400, 500, 'tank');
-        this.cursors = this.input.keyboard.createCursorKeys();
-        this.bullets = this.physics.add.group();
+        const map = this.make.tilemap({ key: 'map' });
+        const tileset = map.addTilesetImage('terrainTiles_default', 'tiles');
+        const layer = map.createLayer('Tile Layer 1', tileset, 0, 0);
+
+        const enemiesLayer = map.getObjectLayer('Enemies');
         this.enemies = this.physics.add.group();
 
-        this.time.addEvent({ delay: 1000, callback: this.spawnEnemy, callbackScope: this, loop: true });
+        enemiesLayer.objects.forEach(obj => {
+            const enemy = this.enemies.create(obj.x, obj.y, 'enemy');
+            enemy.setData('speed', obj.properties.find(p => p.name === 'speed')?.value || 100);
+            enemy.setData('patrol', obj.properties.find(p => p.name === 'patrol')?.value || false);
+        });
+
+        this.physics.add.collider(this.enemies, layer);
     }
 
     update() {
-        if (this.cursors.left.isDown) {
-            this.player.setAngularVelocity(-150);
-        } else if (this.cursors.right.isDown) {
-            this.player.setAngularVelocity(150);
-        } else {
-            this.player.setAngularVelocity(0);
-        }
-
-        if (this.cursors.up.isDown) {
-            this.physics.velocityFromRotation(this.player.rotation, 200, this.player.body.velocity);
-        }
-
-        if (Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
-            this.fireBullet();
-        }
-    }
-
-    fireBullet() {
-        let bullet = this.bullets.create(this.player.x, this.player.y, 'bullet');
-        this.physics.velocityFromRotation(this.player.rotation, 400, bullet.body.velocity);
-    }
-
-    spawnEnemy() {
-        let enemy = this.enemies.create(Phaser.Math.Between(50, 750), 50, 'enemy');
-        enemy.setVelocity(Phaser.Math.Between(-100, 100), Phaser.Math.Between(50, 150));
+        this.enemies.children.iterate(enemy => {
+            if (enemy.getData('patrol')) {
+                enemy.x += Math.sin(this.time.now / 500) * enemy.getData('speed') * 0.01;
+            }
+        });
     }
 }
