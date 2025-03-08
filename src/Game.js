@@ -4,26 +4,52 @@ class Game extends Phaser.Scene {
     }
 
     preload() {
-        this.load.tilemapTiledJSON('map', '/assets/Map.tmx');
-        this.load.image('tiles', '/assets/kenney_top-down-tanks/Tilesheet/terrainTiles_default.png');
-        this.load.spritesheet('enemy', '/assets/kenney_top-down-tanks/Spritesheet/allSprites_default.png', { frameWidth: 32, frameHeight: 32 });
+        // Load map JSON
+        this.load.tilemapTiledJSON('./map', 'assets/Map.json');
+
+        // Load tilesets
+        this.load.spritesheet('./terrainTiles_default', 'assets/kenney_top-down-tanks-redux/Tilesheet/terrainTiles_default.png', {
+            frameWidth: 32,
+            frameHeight: 32
+        });
+
+        this.load.spritesheet('./allSprites_default', 'assets/kenney_top-down-tanks-redux/Spritesheet/allSprites_default.png', {
+            frameWidth: 32,
+            frameHeight: 32
+        });
     }
 
     create() {
+        // Load the tilemap
         const map = this.make.tilemap({ key: 'map' });
-        const tileset = map.addTilesetImage('terrainTiles_default', 'tiles');
-        const layer = map.createLayer('Tile Layer 1', tileset, 0, 0);
 
-        const enemiesLayer = map.getObjectLayer('Enemies');
+        // Attach tilesets (now both 32x32)
+        const terrainTileset = map.addTilesetImage('terrainTiles_default', 'terrainTiles_default', 32, 32);
+        const allSpritesTileset = map.addTilesetImage('allSprites_default', 'allSprites_default', 32, 32);
+
+        // Create layers
+        const terrainLayer = map.createLayer('Tile Layer 1', terrainTileset, 0, 0);
+        const spriteLayer = map.createLayer('enemy', allSpritesTileset, 0, 0);
+
+        // ✅ Remove scaling, since everything is now 32x32
+        // terrainLayer.setScale(2);  <- REMOVE THIS
+
+        // Load enemy objects
+        const enemiesLayer = map.getObjectLayer('enemy');
+        if (!enemiesLayer) {
+            console.error("Object layer 'enemy' not found!");
+            return;
+        }
+
         this.enemies = this.physics.add.group();
 
         enemiesLayer.objects.forEach(obj => {
-            const enemy = this.enemies.create(obj.x, obj.y, 'enemy');
+            const enemy = this.enemies.create(obj.x, obj.y, 'allSprites_default');
             enemy.setData('speed', obj.properties.find(p => p.name === 'speed')?.value || 100);
             enemy.setData('patrol', obj.properties.find(p => p.name === 'patrol')?.value || false);
         });
 
-        this.physics.add.collider(this.enemies, layer);
+        this.physics.add.collider(this.enemies, terrainLayer);
     }
 
     update() {
