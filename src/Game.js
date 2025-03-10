@@ -5,15 +5,15 @@ class Game extends Phaser.Scene {
 
     preload() {
         // Load map JSON
-        this.load.tilemapTiledJSON('./map', 'assets/Map.json');
+        this.load.tilemapTiledJSON('./map', '/assets/Map.json');
 
         // Load tilesets
-        this.load.spritesheet('./terrainTiles_default', 'assets/kenney_top-down-tanks-redux/Tilesheet/terrainTiles_default.png', {
+        this.load.spritesheet('./terrainTiles_default', '/assets/kenney_top-down-tanks-redux/Tilesheet/terrainTiles_default.png', {
             frameWidth: 32,
             frameHeight: 32
         });
 
-        this.load.spritesheet('./allSprites_default', 'assets/kenney_top-down-tanks-redux/Spritesheet/allSprites_default.png', {
+        this.load.spritesheet('./allSprites_default', '/assets/kenney_top-down-tanks-redux/Spritesheet/allSprites_default.png', {
             frameWidth: 32,
             frameHeight: 32
         });
@@ -30,9 +30,6 @@ class Game extends Phaser.Scene {
         // Create layers
         const terrainLayer = map.createLayer('Tile Layer 1', terrainTileset, 0, 0);
         const spriteLayer = map.createLayer('enemy', allSpritesTileset, 0, 0);
-
-        // ✅ Remove scaling, since everything is now 32x32
-        // terrainLayer.setScale(2);  <- REMOVE THIS
 
         // Load enemy objects
         const enemiesLayer = map.getObjectLayer('enemy');
