@@ -13,15 +13,16 @@ class Game extends Phaser.Scene {
     }
 
     create() {
-        // Load the tilemap
         const map = this.make.tilemap({ key: 'map' });
 
-        // Add terrain layer as walls
         const terrainTileset = map.addTilesetImage('terrainTiles_default', 'terrainTiles_default', 32, 32);
-        const terrainLayer = map.createLayer('Tile Layer 1', terrainTileset, 0, 0);
-        terrainLayer.setCollisionByExclusion([-1]); // Set all tiles as collidable (adjust if specific tiles should be passable)
+        const terrainLayer = map.createLayer('Background', terrainTileset, 0, 0);
+        if (!terrainLayer) {
+            console.error("Failed to create terrain layer 'Background'");
+            return;
+        }
+        terrainLayer.setCollisionByExclusion([-1]);
 
-        // Enemy setup
         const enemiesLayer = map.getObjectLayer('enemy');
         if (!enemiesLayer || !enemiesLayer.objects) {
             console.error("Object layer 'enemy' not found or contains no objects!");
@@ -29,31 +30,30 @@ class Game extends Phaser.Scene {
         }
         this.enemies = this.physics.add.group();
         enemiesLayer.objects.forEach(obj => {
+            console.log('Creating enemy at position:', obj.x, obj.y); // Debug log
             const enemy = this.enemies.create(obj.x, obj.y - 23, 'allSprites_default', 'tank_blue');
+            if (!enemy) {
+                console.error('Failed to create enemy sprite');
+                return;
+            }
             enemy.setData('speed', obj.properties.find(p => p.name === 'speed')?.value || 100);
             enemy.setData('patrol', obj.properties.find(p => p.name === 'patrol')?.value || false);
+            console.log('Enemy created with speed:', enemy.getData('speed'), 'patrol:', enemy.getData('patrol')); // Debug log
         });
 
-        // Player setup
-        this.player = this.physics.add.sprite(100, 100, 'allSprites_default', 'tank_green'); // Start at (100, 100)
+        this.player = this.physics.add.sprite(100, 100, 'allSprites_default', 'tank_green');
         this.player.setData('speed', 200);
 
-        // Physics and collisions
         this.physics.add.collider(this.player, terrainLayer);
         this.physics.add.collider(this.enemies, terrainLayer);
-        this.physics.add.collider(this.player, this.enemies);
+        this.physics.add.collider(this.player, this.enemies, this.hitEnemy, null, this);
 
-        // Camera setup
         const camera = this.cameras.main;
         camera.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
         camera.startFollow(this.player);
-
-        // Keyboard controls
-        this.cursors = this.input.keyboard.createCursorKeys();
     }
 
     update() {
-        // Player movement
         this.player.setVelocity(0);
         if (this.cursors.left.isDown) {
             this.player.setVelocityX(-this.player.getData('speed'));
@@ -66,55 +66,14 @@ class Game extends Phaser.Scene {
             this.player.setVelocityY(this.player.getData('speed'));
         }
 
-        // Enemy movement
         this.enemies.children.iterate(enemy => {
             if (enemy.getData('patrol')) {
                 enemy.x += Math.sin(this.time.now / 500) * enemy.getData('speed') * 0.01;
             }
         });
     }
-}
 
-class GameOver extends Phaser.Scene {
-    constructor() {
-        super({ key: 'GameOver' });
-    }
-
-    create() {
-        this.add.text(300, 300, 'Game Over', { fontSize: '40px', fill: '#fff' });
-        this.add.text(300, 400, 'Press R to Restart', { fontSize: '20px', fill: '#fff' });
-        this.input.keyboard.on('keydown-R', () => {
-            this.scene.start('Game');
-        });
+    hitEnemy(player, enemy) {
+        this.scene.start('GameOver');
     }
 }
-
-class MainMenu extends Phaser.Scene {
-    constructor() {
-        super({ key: 'MainMenu' });
-    }
-
-    create() {
-        this.add.text(250, 200, 'SPACE PARANOIDS', { fontSize: '40px', fill: '#fff', fontStyle: 'bold' });
-        this.add.text(300, 300, 'Press SPACE to Start', { fontSize: '20px', fill: '#fff' });
-        this.input.keyboard.on('keydown-SPACE', () => {
-            this.scene.start('Game');
-        });
-    }
-}
-
-// Scene configuration
-const config = {
-    type: Phaser.AUTO,
-    width: 800,
-    height: 600,
-    physics: {
-        default: 'arcade',
-        arcade: {
-            debug: false
-        }
-    },
-    scene: [MainMenu, Game, GameOver]
-};
-
-const game = new Phaser.Game(config);
