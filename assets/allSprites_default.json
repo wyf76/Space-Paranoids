@@ -1,0 +1,23 @@
+{
+    "frames": {
+        "tank_blue": {
+            "frame": { "x": 432, "y": 48, "w": 42, "h": 46 },
+            "rotated": false,
+            "trimmed": false,
+            "spriteSourceSize": { "x": 0, "y": 0, "w": 42, "h": 46 },
+            "sourceSize": { "w": 42, "h": 46 }
+        },
+        "tank_green": {
+            "frame": { "x": 434, "y": 357, "w": 42, "h": 46 },
+            "rotated": false,
+            "trimmed": false,
+            "spriteSourceSize": { "x": 0, "y": 0, "w": 42, "h": 46 },
+            "sourceSize": { "w": 42, "h": 46 }
+        }
+    },
+    "meta": {
+        "image": "allSprites_default.png",
+        "size": { "w": 561, "h": 565 },
+        "scale": 1
+    }
+}
