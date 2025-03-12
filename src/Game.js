@@ -33,7 +33,6 @@ class Game extends Phaser.Scene {
         }
         this.enemies = this.physics.add.group()
         enemiesLayer.objects.forEach(obj => {
-            console.log('Creating enemy at position:', obj.x, obj.y)
             const enemy = this.enemies.create(obj.x, obj.y - 23, 'allSprites_default', 'tank_blue')
             if (!enemy) {
                 console.error('Failed to create enemy sprite')
@@ -41,7 +40,6 @@ class Game extends Phaser.Scene {
             }
             enemy.setData('speed', obj.properties.find(p => p.name === 'speed')?.value || 100)
             enemy.setData('patrol', obj.properties.find(p => p.name === 'patrol')?.value || false)
-            console.log('Enemy created with speed:', enemy.getData('speed'), 'patrol:', enemy.getData('patrol'))
         })
 
         this.player = this.physics.add.sprite(100, 100, 'allSprites_default', 'tank_green')
