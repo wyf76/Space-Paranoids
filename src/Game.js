@@ -12,7 +12,7 @@ class Game extends Phaser.Scene {
         this.load.atlas('allSprites_default', '/assets/allSprites_default.png', '/assets/allSprites_default.json')
         this.load.audio('tank_move', '/assets/tank_move.mp3')
         this.load.audio('explosion', '/assets/explosion.mp3')
-        this.load.audio('shoot', '/assets/shoot.mp3') // Load the shooting sound
+        this.load.audio('shoot', '/assets/shoot.mp3')
     }
 
     create() {
@@ -25,6 +25,10 @@ class Game extends Phaser.Scene {
             return
         }
         terrainLayer.setCollisionByExclusion([-1])
+
+        // Add map borders
+        this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels)
+        this.physics.world.setBoundsCollision(true, true, true, true)
 
         // Enemies
         const enemiesLayer = map.getObjectLayer('enemy')
@@ -50,6 +54,7 @@ class Game extends Phaser.Scene {
         this.player = this.physics.add.sprite(100, 100, 'allSprites_default', 'tank_green')
         this.player.setData('speed', 200)
         this.player.setData('health', 5)
+        this.player.setCollideWorldBounds(true) // Prevent player from leaving the map
 
         // Physics and collisions
         this.physics.add.collider(this.enemies, terrainLayer)
@@ -68,7 +73,7 @@ class Game extends Phaser.Scene {
         // Audio
         this.moveSound = this.sound.add('tank_move', { volume: 0.3 })
         this.explosionSound = this.sound.add('explosion', { volume: 0.7 })
-        this.shootSound = this.sound.add('shoot', { volume: 0.5 }) // Initialize the shooting sound
+        this.shootSound = this.sound.add('shoot', { volume: 0.5 })
 
         // Health text and instructions
         this.playerHealthText = this.add.text(10, 10, 'Health: 5', { fontSize: '16px', fill: '#fff' })
@@ -78,14 +83,6 @@ class Game extends Phaser.Scene {
         // Projectiles setup
         this.projectiles = this.physics.add.group()
         this.canShoot = true
-        this.time.addEvent({
-            delay: 500,
-            callback: () => this.canShoot = true,
-            loop: true
-        })
-
-        // Enemy projectiles collision with player
-        this.physics.add.overlap(this.projectiles, this.player, this.hitPlayerWithProjectile, null, this)
     }
 
     update() {
@@ -120,7 +117,7 @@ class Game extends Phaser.Scene {
         }
 
         // Shooting
-        if (this.shootKey.isDown && this.canShoot) {
+        if (Phaser.Input.Keyboard.JustDown(this.shootKey) && this.canShoot) {
             const gunOffset = 20
             const rad = Phaser.Math.DegToRad(this.player.angle + 90)
             const gunX = this.player.x + Math.cos(rad) * gunOffset
@@ -136,9 +133,13 @@ class Game extends Phaser.Scene {
             projectile.setData('damage', 1)
             projectile.setData('isEnemyBullet', false)
             projectile.setData('id', Phaser.Math.RND.uuid())
-            this.shootSound.play() // Play shooting sound
+            this.shootSound.play()
             this.canShoot = false
-            this.time.addEvent({ delay: 500, callback: () => this.canShoot = true })
+            this.time.addEvent({
+                delay: 1000,
+                callback: () => this.canShoot = true,
+                loop: false
+            })
         }
 
         // Enemy AI
@@ -158,7 +159,7 @@ class Game extends Phaser.Scene {
                 if (distanceToPlayer < 300) {
                     const currentTime = this.time.now
                     const lastShot = enemy.getData('lastShot') || 0
-                    if (currentTime - lastShot > 2000) {
+                    if (currentTime - lastShot > 3000) {
                         this.shootEnemyBullet(enemy)
                         enemy.setData('lastShot', currentTime)
                     }
@@ -200,7 +201,7 @@ class Game extends Phaser.Scene {
         projectile.setData('damage', 1)
         projectile.setData('isEnemyBullet', true)
         projectile.setData('id', Phaser.Math.RND.uuid())
-        this.shootSound.play() // Play shooting sound
+        this.shootSound.play()
     }
 
     hitEnemy(player, enemy) {
@@ -212,6 +213,7 @@ class Game extends Phaser.Scene {
         if (player.getData('health') <= 0 || enemy.getData('health') <= 0) {
             player.disableBody(true, true)
             enemy.disableBody(true, true)
+            this.createExplosion(enemy.x, enemy.y) // Add explosion effect
             enemy.destroy()
             this.enemies.remove(enemy, true, true)
             this.time.delayedCall(1000, () => {
@@ -245,20 +247,35 @@ class Game extends Phaser.Scene {
 
             if (newHealth <= 0) {
                 console.log('Enemy destroyed at:', enemy.x, enemy.y)
-                const explosion = this.add.sprite(enemy.x, enemy.y, 'allSprites_default', 'bullet')
-                explosion.setScale(1)
-                this.tweens.add({
-                    targets: explosion,
-                    scale: 3,
-                    alpha: 0,
-                    duration: 500,
-                    onComplete: () => explosion.destroy()
-                })
+                this.createExplosion(enemy.x, enemy.y) // Add explosion effect
                 enemy.disableBody(true, true)
                 enemy.destroy()
                 this.enemies.remove(enemy, true, true)
                 console.log('Enemy removed from group. Active enemies:', this.enemies.getChildren().length)
             }
+        }
+    }
+
+    createExplosion(x, y) {
+        // Play explosion sound
+        this.explosionSound.play()
+
+        // Create multiple particles for a more dynamic explosion effect
+        for (let i = 0; i < 5; i++) {
+            const particle = this.add.sprite(x, y, 'allSprites_default', 'bullet')
+            particle.setScale(1)
+            const angle = Phaser.Math.DegToRad(Phaser.Math.Between(0, 360))
+            const speed = Phaser.Math.Between(50, 100)
+            this.tweens.add({
+                targets: particle,
+                x: x + Math.cos(angle) * speed,
+                y: y + Math.sin(angle) * speed,
+                scale: 0,
+                alpha: 0,
+                duration: 500,
+                delay: i * 50, // Stagger the particles
+                onComplete: () => particle.destroy()
+            })
         }
     }
 
@@ -269,6 +286,8 @@ class Game extends Phaser.Scene {
             const currentHealth = player.getData('health') || 0
             const damage = projectile.getData('damage') || 1
             player.setData('health', currentHealth - damage)
+            player.setTint(0xff0000)
+            this.time.delayedCall(200, () => player.clearTint(), [], this)
             if (player.getData('health') <= 0) {
                 player.disableBody(true, true)
                 this.time.delayedCall(1000, () => {
