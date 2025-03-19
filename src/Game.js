@@ -40,7 +40,7 @@ class Game extends Phaser.Scene {
             }
             enemy.setData('speed', obj.properties.find(p => p.name === 'speed')?.value || 100)
             enemy.setData('patrol', obj.properties.find(p => p.name === 'patrol')?.value || false)
-            enemy.setData('health', 3) // Enemy health
+            enemy.setData('health', 3) // Ensure health is set
         })
 
         // Player
@@ -99,9 +99,9 @@ class Game extends Phaser.Scene {
             isMoving = true
         }
 
-        // Rotate player based on velocity
+        // Rotate player based on velocity with corrected offset
         if (isMoving) {
-            const angle = Phaser.Math.RadToDeg(Math.atan2(this.player.body.velocity.y, this.player.body.velocity.x))
+            const angle = Phaser.Math.RadToDeg(Math.atan2(this.player.body.velocity.y, this.player.body.velocity.x)) - 90
             this.player.setAngle(angle)
         }
 
@@ -113,9 +113,20 @@ class Game extends Phaser.Scene {
 
         // Shooting
         if (this.shootKey.isDown && this.canShoot) {
-            const projectile = this.projectiles.create(this.player.x, this.player.y, 'allSprites_default', 'bullet')
+            // Calculate gun position (offset from tank center)
+            const gunOffset = 20 // Distance from tank center to gun tip
+            const rad = Phaser.Math.DegToRad(this.player.angle + 90) // Adjust bullet angle to match tank's visual direction
+            const gunX = this.player.x + Math.cos(rad) * gunOffset
+            const gunY = this.player.y + Math.sin(rad) * gunOffset
+
+            const projectile = this.projectiles.create(gunX, gunY, 'allSprites_default', 'bullet')
             projectile.setScale(1)
-            this.physics.moveTo(projectile, this.input.activePointer.x + this.cameras.main.scrollX, this.input.activePointer.y + this.cameras.main.scrollY, 300)
+            // Set velocity based on adjusted angle
+            const speed = 300
+            projectile.setVelocity(
+                Math.cos(rad) * speed,
+                Math.sin(rad) * speed
+            )
             projectile.setData('damage', 1)
             this.canShoot = false
             this.time.addEvent({ delay: 500, callback: () => this.canShoot = true })
@@ -128,8 +139,8 @@ class Game extends Phaser.Scene {
                     enemy.x += Math.sin(this.time.now / 500) * enemy.getData('speed') * 0.01
                 } else {
                     this.physics.moveTo(enemy, this.player.x, this.player.y, enemy.getData('speed'))
-                    // Rotate enemy based on velocity
-                    const angle = Phaser.Math.RadToDeg(Math.atan2(enemy.body.velocity.y, enemy.body.velocity.x))
+                    // Rotate enemy based on velocity with corrected offset
+                    const angle = Phaser.Math.RadToDeg(Math.atan2(enemy.body.velocity.y, enemy.body.velocity.x)) + 90
                     enemy.setAngle(angle)
                 }
                 // Enemy bounds
@@ -145,7 +156,7 @@ class Game extends Phaser.Scene {
         // Update health text
         this.playerHealthText.setText('Health: ' + this.player.getData('health'))
         const activeEnemies = this.enemies.getChildren().filter(enemy => enemy.active)
-        const enemyHealth = activeEnemies.length > 0 ? activeEnemies[0].getData('health') : 0
+        const enemyHealth = activeEnemies.length > 0 ? activeEnemies[0].getData('health') || 0 : 0
         this.enemyHealthText.setText('Enemy Health: ' + enemyHealth)
     }
 
@@ -158,6 +169,7 @@ class Game extends Phaser.Scene {
         if (player.getData('health') <= 0 || enemy.getData('health') <= 0) {
             player.disableBody(true, true)
             enemy.disableBody(true, true)
+            enemy.destroy()
             this.time.delayedCall(1000, () => {
                 this.scene.start('GameOver')
             }, [], this)
@@ -166,10 +178,12 @@ class Game extends Phaser.Scene {
 
     hitEnemyWithProjectile(projectile, enemy) {
         projectile.destroy()
-        if (enemy.active) {
-            enemy.setData('health', enemy.getData('health') - projectile.getData('damage'))
+        if (enemy && enemy.active) {
+            const currentHealth = enemy.getData('health') || 0
+            enemy.setData('health', currentHealth - projectile.getData('damage'))
             if (enemy.getData('health') <= 0) {
                 enemy.disableBody(true, true)
+                enemy.destroy()
             }
         }
     }
