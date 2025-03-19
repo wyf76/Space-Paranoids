@@ -5,7 +5,7 @@ const config = {
     width: 800,
     height: 600,
     parent: 'game-container',
-    physics: {
+    physics: { 
         default: 'arcade',
         arcade: {
             debug: false
