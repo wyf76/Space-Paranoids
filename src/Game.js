@@ -16,7 +16,7 @@ class Game extends Phaser.Scene {
         this.load.audio('tank_move', 'assets/tank_move.mp3');
         this.load.audio('explosion', 'assets/explosion.mp3');
         this.load.audio('shoot', 'assets/shoot.mp3');
-        this.load.audio('bgMusic', 'assets/bgMusic.mp3'); // Ensure this file exists
+        this.load.audio('bgMusic', 'assets/bgMusic.mp3');
     }
 
     create() {
@@ -74,6 +74,8 @@ class Game extends Phaser.Scene {
         this.playerHealthText = this.add.text(10, 10, 'Health: ' + this.player.getData('health'), { fontSize: '16px', fill: '#fff' }).setScrollFactor(0);
         this.score = 0;
         this.scoreText = this.add.text(10, 30, 'Score: ' + this.score, { fontSize: '16px', fill: '#fff' }).setScrollFactor(0);
+        // Instruction text for playing without a special ability
+        this.instructionsText = this.add.text(10, 50, 'Instructions: Use Arrow Keys to Move, SPACE to Shoot. Avoid enemy tanks!', { fontSize: '16px', fill: '#fff' }).setScrollFactor(0);
         this.pauseText = this.add.text(300, 250, 'Paused\nPress P to Resume', { fontSize: '40px', fill: '#fff', align: 'center' });
         this.pauseText.setScrollFactor(0);
         this.pauseText.setVisible(false);
