@@ -12,6 +12,7 @@ class Game extends Phaser.Scene {
         this.load.atlas('allSprites_default', '/assets/allSprites_default.png', '/assets/allSprites_default.json')
         this.load.audio('tank_move', '/assets/tank_move.mp3')
         this.load.audio('explosion', '/assets/explosion.mp3')
+        this.load.audio('shoot', '/assets/shoot.mp3') // Load the shooting sound
     }
 
     create() {
@@ -67,6 +68,7 @@ class Game extends Phaser.Scene {
         // Audio
         this.moveSound = this.sound.add('tank_move', { volume: 0.3 })
         this.explosionSound = this.sound.add('explosion', { volume: 0.7 })
+        this.shootSound = this.sound.add('shoot', { volume: 0.5 }) // Initialize the shooting sound
 
         // Health text and instructions
         this.playerHealthText = this.add.text(10, 10, 'Health: 5', { fontSize: '16px', fill: '#fff' })
@@ -134,6 +136,7 @@ class Game extends Phaser.Scene {
             projectile.setData('damage', 1)
             projectile.setData('isEnemyBullet', false)
             projectile.setData('id', Phaser.Math.RND.uuid())
+            this.shootSound.play() // Play shooting sound
             this.canShoot = false
             this.time.addEvent({ delay: 500, callback: () => this.canShoot = true })
         }
@@ -197,6 +200,7 @@ class Game extends Phaser.Scene {
         projectile.setData('damage', 1)
         projectile.setData('isEnemyBullet', true)
         projectile.setData('id', Phaser.Math.RND.uuid())
+        this.shootSound.play() // Play shooting sound
     }
 
     hitEnemy(player, enemy) {
@@ -221,14 +225,13 @@ class Game extends Phaser.Scene {
         const projectileId = projectile.getData('id')
         const hitBy = enemy.getData('hitBy')
 
-        // Prevent multiple hits from the same projectile
         if (hitBy.has(projectileId)) return
         hitBy.add(projectileId)
 
         projectile.destroy()
         if (enemy && enemy.active) {
             const currentHealth = enemy.getData('health') || 0
-            const damage = projectile.getData('damage') || 1 // Default to 1 if undefined
+            const damage = projectile.getData('damage') || 1
             console.log('Projectile damage:', damage)
             const newHealth = currentHealth - damage
             console.log(`Enemy hit! Health: ${currentHealth} -> ${newHealth}`)
@@ -242,7 +245,6 @@ class Game extends Phaser.Scene {
 
             if (newHealth <= 0) {
                 console.log('Enemy destroyed at:', enemy.x, enemy.y)
-                // Placeholder explosion effect using bullet sprite
                 const explosion = this.add.sprite(enemy.x, enemy.y, 'allSprites_default', 'bullet')
                 explosion.setScale(1)
                 this.tweens.add({
