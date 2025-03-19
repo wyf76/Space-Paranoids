@@ -10,6 +10,6 @@ const config = {
         }
     },
     scene: [MainMenu, Game, GameOver, Credits]
-};
+}
 
 const game = new Phaser.Game(config);
