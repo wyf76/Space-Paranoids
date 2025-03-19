@@ -1,5 +1,3 @@
-// Phaser components used: Physics system, Camera, Animation Manager, Timers, Text Objects
-// Assets sourced from: Kenney.nl (terrainTiles_default, allSprites_default), OpenGameArt.org (tank_move.mp3, explosion.mp3)
 const config = {
     type: Phaser.AUTO,
     width: 800,
@@ -8,9 +6,10 @@ const config = {
     physics: { 
         default: 'arcade',
         arcade: {
-            debug: false
+            debug: false // Set to true for collision debugging
         }
     },
-    scene: [MainMenu, Game, GameOver]
-}
-const game = new Phaser.Game(config)
+    scene: [MainMenu, Game, GameOver, Credits]
+};
+
+const game = new Phaser.Game(config);

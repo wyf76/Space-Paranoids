@@ -32,7 +32,6 @@ class Game extends Phaser.Scene {
         this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 
         // --- Create the Player ---
-        // Place the player near the bottom center of the map
         this.player = this.physics.add.sprite(map.widthInPixels / 2, map.heightInPixels - 100, 'allSprites_default', 'tank_green');
         this.player.setCollideWorldBounds(true);
         this.player.setDepth(1);
@@ -42,7 +41,7 @@ class Game extends Phaser.Scene {
         this.enemies = this.physics.add.group();
 
         // --- Create the Projectiles Group (for player's bullets) ---
-        // (Uses your custom Projectile class from Projectile.js)
+        // (Assumes your custom Projectile class is in Projectile.js)
         this.projectiles = this.physics.add.group({
             classType: Projectile,
             maxSize: 50,
@@ -82,7 +81,6 @@ class Game extends Phaser.Scene {
         camera.startFollow(this.player);
 
         // --- Enemy Spawner ---
-        // Spawn an enemy every 1500ms at a random x position at the top of the screen
         this.time.addEvent({
             delay: 1500,
             callback: this.spawnEnemy,
@@ -91,7 +89,6 @@ class Game extends Phaser.Scene {
         });
 
         // --- Score Timer ---
-        // Increase score by 10 every second
         this.time.addEvent({
             delay: 1000,
             callback: () => {
@@ -106,6 +103,9 @@ class Game extends Phaser.Scene {
     }
 
     update() {
+        // --- Update Health Display ---
+        this.playerHealthText.setText('Health: ' + this.player.getData('health'));
+
         // --- Player Movement ---
         this.player.setVelocity(0);
         let isMoving = false;
@@ -137,7 +137,7 @@ class Game extends Phaser.Scene {
 
         // --- Player Shooting ---
         if (Phaser.Input.Keyboard.JustDown(this.shootKey) && this.canShoot) {
-            const gunOffset = 24; // Spawn bullet in front of the tank
+            const gunOffset = 24;
             const rad = Phaser.Math.DegToRad(this.player.angle + 90);
             const gunX = this.player.x + Math.cos(rad) * gunOffset;
             const gunY = this.player.y + Math.sin(rad) * gunOffset;
@@ -155,7 +155,7 @@ class Game extends Phaser.Scene {
             }
         }
 
-        // --- Enemy Behavior: Enemies drive toward the player ---
+        // --- Enemies Behavior: Enemies drive toward the player ---
         this.enemies.children.iterate(enemy => {
             if (enemy.active) {
                 this.physics.moveToObject(enemy, this.player, 100);
@@ -170,8 +170,7 @@ class Game extends Phaser.Scene {
         const enemy = this.enemies.create(x, y, 'allSprites_default', 'tank_blue');
         if (enemy) {
             enemy.setDepth(1);
-            enemy.setData('health', 1); // one hit kills enemy
-            // Give a slight downward velocity so it enters the play area
+            enemy.setData('health', 1);
             enemy.setVelocityY(50);
         }
     }
@@ -188,14 +187,13 @@ class Game extends Phaser.Scene {
     }
 
     hitEnemyWithProjectile(projectile, enemy) {
-        // When the player's bullet hits an enemy:
+        // When a player's bullet hits an enemy:
         projectile.disableBody(true, true);
         projectile.destroy();
         if (enemy && enemy.active) {
             enemy.destroy();
             this.enemies.remove(enemy, true, true);
             this.createExplosion(enemy.x, enemy.y);
-            // Reward additional score for shooting an enemy
             this.score += 20;
             this.scoreText.setText('Score: ' + this.score);
         }
