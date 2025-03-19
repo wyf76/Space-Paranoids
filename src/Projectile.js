@@ -23,15 +23,5 @@ class Projectile extends Phaser.Physics.Arcade.Sprite {
 
         // Give the bullet velocity
         this.setVelocity(velocityX, velocityY)
-
-        // Log for debugging
-        console.log('Projectile fired:', {
-            id: id,
-            isEnemyBullet: isEnemyBullet,
-            x: this.x,
-            y: this.y,
-            vx: velocityX,
-            vy: velocityY
-        })
     }
 }
