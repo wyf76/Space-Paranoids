@@ -2,7 +2,7 @@ class Game extends Phaser.Scene {
     constructor() {
         super({ key: 'Game' });
         this.isPaused = false;
-        this.difficultyFactor = 1;  // Gradually increases over time
+        this.difficultyFactor = 1;  // This increases gradually over time
     }
 
     preload() {
@@ -28,14 +28,16 @@ class Game extends Phaser.Scene {
         const map = this.make.tilemap({ key: 'map' });
         const tileset = map.addTilesetImage('terrainTiles_default', 'terrainTiles_default', 32, 32);
         const terrainLayer = map.createLayer('Background', tileset, 0, 0);
-        if (!terrainLayer) { return; }
+        if (!terrainLayer) {
+            return;
+        }
         terrainLayer.setCollisionByExclusion([-1]);
         terrainLayer.setDepth(0);
 
         // Set World Bounds
         this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 
-        // Create the Player (placed near bottom center)
+        // Create the Player
         this.player = this.physics.add.sprite(map.widthInPixels / 2, map.heightInPixels - 100, 'allSprites_default', 'tank_green');
         this.player.setCollideWorldBounds(true);
         this.player.setDepth(1);
@@ -62,7 +64,6 @@ class Game extends Phaser.Scene {
         this.cursors = this.input.keyboard.createCursorKeys();
         this.shootKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
         this.pauseKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
-        this.specialKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.B);
 
         // Audio Setup
         this.moveSound = this.sound.add('tank_move', { volume: 0.3 });
@@ -73,15 +74,11 @@ class Game extends Phaser.Scene {
         this.playerHealthText = this.add.text(10, 10, 'Health: ' + this.player.getData('health'), { fontSize: '16px', fill: '#fff' }).setScrollFactor(0);
         this.score = 0;
         this.scoreText = this.add.text(10, 30, 'Score: ' + this.score, { fontSize: '16px', fill: '#fff' }).setScrollFactor(0);
-        // Special ability status text
-        this.specialAbilityUnlocked = false;
-        this.specialText = this.add.text(10, 50, 'Special: Locked', { fontSize: '16px', fill: '#fff' }).setScrollFactor(0);
-        // Pause overlay text
         this.pauseText = this.add.text(300, 250, 'Paused\nPress P to Resume', { fontSize: '40px', fill: '#fff', align: 'center' });
         this.pauseText.setScrollFactor(0);
         this.pauseText.setVisible(false);
 
-        // Colliders & Overlap
+        // Colliders & Overlaps
         this.physics.add.collider(this.player, terrainLayer);
         this.physics.add.collider(this.enemies, terrainLayer);
         this.physics.add.collider(this.player, this.enemies, this.hitEnemy, null, this);
@@ -92,7 +89,7 @@ class Game extends Phaser.Scene {
         camera.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
         camera.startFollow(this.player);
 
-        // Enemy Spawner (initially every 1500ms; later adjusted by difficulty)
+        // Enemy Spawner - spawns enemy every 1500ms
         this.enemyTimer = this.time.addEvent({
             delay: 1500,
             callback: this.spawnEnemy,
@@ -100,7 +97,7 @@ class Game extends Phaser.Scene {
             loop: true
         });
 
-        // Score Timer (increases score and difficulty over time)
+        // Score Timer - increases score every second and slowly increases difficulty
         this.time.addEvent({
             delay: 1000,
             callback: () => {
@@ -112,22 +109,11 @@ class Game extends Phaser.Scene {
             loop: true
         });
 
-        // Special Ability Unlock Timer (unlock after 30 seconds)
-        this.time.addEvent({
-            delay: 30000,
-            callback: () => {
-                this.specialAbilityUnlocked = true;
-                this.specialText.setText('Special: Ready (Press B)');
-            },
-            callbackScope: this,
-            loop: false
-        });
-
         this.canShoot = true;
     }
 
     update() {
-        // Pause/Resume Handling
+        // Pause/Resume Functionality
         if (Phaser.Input.Keyboard.JustDown(this.pauseKey)) {
             this.isPaused = !this.isPaused;
             if (this.isPaused) {
@@ -145,11 +131,6 @@ class Game extends Phaser.Scene {
 
         // Update Health Display
         this.playerHealthText.setText('Health: ' + this.player.getData('health'));
-
-        // Update enemy spawn rate based on difficultyFactor (min delay 800ms)
-        let newDelay = 1500 - (this.difficultyFactor - 1) * 200;
-        if(newDelay < 800) newDelay = 800;
-        this.enemyTimer.delay = newDelay;
 
         // Player Movement
         this.player.setVelocity(0);
@@ -198,32 +179,7 @@ class Game extends Phaser.Scene {
             }
         }
 
-        // Special Ability: If unlocked and player presses B, destroy all enemies.
-        if (Phaser.Input.Keyboard.JustDown(this.specialKey) && this.specialAbilityUnlocked) {
-            this.enemies.children.iterate(enemy => {
-                if (enemy.active) {
-                    this.createExplosion(enemy.x, enemy.y);
-                    enemy.destroy();
-                    this.enemies.remove(enemy, true, true);
-                    this.score += 20; // Award bonus score per enemy
-                }
-            });
-            this.scoreText.setText('Score: ' + this.score);
-            this.specialAbilityUnlocked = false;
-            this.specialText.setText('Special: Cooldown');
-            // Restart special ability unlock after cooldown (30 seconds)
-            this.time.addEvent({
-                delay: 3000,
-                callback: () => {
-                    this.specialAbilityUnlocked = true;
-                    this.specialText.setText('Special: Ready (Press B)');
-                },
-                callbackScope: this,
-                loop: false
-            });
-        }
-
-        // Enemy Behavior: Enemies drive toward the player; speed scales with difficulty
+        // Enemy Behavior: Enemies drive toward the player (speed adjusted to 80 * difficultyFactor)
         this.enemies.children.iterate(enemy => {
             if (enemy.active) {
                 this.physics.moveToObject(enemy, this.player, 80 * this.difficultyFactor);
@@ -232,7 +188,7 @@ class Game extends Phaser.Scene {
     }
 
     spawnEnemy() {
-        // Spawn an enemy at a random x at the top
+        // Spawn an enemy at a random x at the top of the world
         const x = Phaser.Math.Between(50, this.physics.world.bounds.width - 50);
         const y = 0;
         let enemy;
@@ -255,7 +211,7 @@ class Game extends Phaser.Scene {
     }
 
     hitEnemy(player, enemy) {
-        // On collision: reduce player's health and destroy the enemy.
+        // When an enemy collides with the player: reduce player's health and destroy the enemy.
         player.setData('health', player.getData('health') - 1);
         this.createExplosion(enemy.x, enemy.y);
         enemy.destroy();
