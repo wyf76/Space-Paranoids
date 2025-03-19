@@ -99,6 +99,12 @@ class Game extends Phaser.Scene {
             isMoving = true
         }
 
+        // Rotate player based on velocity
+        if (isMoving) {
+            const angle = Phaser.Math.RadToDeg(Math.atan2(this.player.body.velocity.y, this.player.body.velocity.x))
+            this.player.setAngle(angle)
+        }
+
         if (isMoving && !this.moveSound.isPlaying) {
             this.moveSound.play()
         } else if (!isMoving && this.moveSound.isPlaying) {
@@ -108,7 +114,7 @@ class Game extends Phaser.Scene {
         // Shooting
         if (this.shootKey.isDown && this.canShoot) {
             const projectile = this.projectiles.create(this.player.x, this.player.y, 'allSprites_default', 'bullet')
-            projectile.setScale(1) // Adjust scale if needed
+            projectile.setScale(1)
             this.physics.moveTo(projectile, this.input.activePointer.x + this.cameras.main.scrollX, this.input.activePointer.y + this.cameras.main.scrollY, 300)
             projectile.setData('damage', 1)
             this.canShoot = false
@@ -122,6 +128,9 @@ class Game extends Phaser.Scene {
                     enemy.x += Math.sin(this.time.now / 500) * enemy.getData('speed') * 0.01
                 } else {
                     this.physics.moveTo(enemy, this.player.x, this.player.y, enemy.getData('speed'))
+                    // Rotate enemy based on velocity
+                    const angle = Phaser.Math.RadToDeg(Math.atan2(enemy.body.velocity.y, enemy.body.velocity.x))
+                    enemy.setAngle(angle)
                 }
                 // Enemy bounds
                 if (enemy.x < 0 || enemy.x > this.cameras.main.width || enemy.y < 0 || enemy.y > this.cameras.main.height) {
@@ -135,7 +144,9 @@ class Game extends Phaser.Scene {
 
         // Update health text
         this.playerHealthText.setText('Health: ' + this.player.getData('health'))
-        this.enemyHealthText.setText('Enemy Health: ' + (this.enemies.countActive() > 0 ? this.enemies.getChildren()[0].getData('health') : 0))
+        const activeEnemies = this.enemies.getChildren().filter(enemy => enemy.active)
+        const enemyHealth = activeEnemies.length > 0 ? activeEnemies[0].getData('health') : 0
+        this.enemyHealthText.setText('Enemy Health: ' + enemyHealth)
     }
 
     hitEnemy(player, enemy) {
@@ -155,9 +166,11 @@ class Game extends Phaser.Scene {
 
     hitEnemyWithProjectile(projectile, enemy) {
         projectile.destroy()
-        enemy.setData('health', enemy.getData('health') - projectile.getData('damage'))
-        if (enemy.getData('health') <= 0) {
-            enemy.disableBody(true, true)
+        if (enemy.active) {
+            enemy.setData('health', enemy.getData('health') - projectile.getData('damage'))
+            if (enemy.getData('health') <= 0) {
+                enemy.disableBody(true, true)
+            }
         }
     }
 }
