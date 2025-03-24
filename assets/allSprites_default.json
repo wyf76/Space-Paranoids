@@ -20,6 +20,20 @@
             "trimmed": false,
             "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
             "sourceSize": { "w": 16, "h": 16 }
+        },
+        "powerup_red": {
+            "frame": { "x": 0, "y": 48, "w": 32, "h": 32 },
+            "rotated": false,
+            "trimmed": false,
+            "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 32 },
+            "sourceSize": { "w": 32, "h": 32 }
+        },
+        "powerup_blue": {
+            "frame": { "x": 208, "y": 336, "w": 32, "h": 32 },
+            "rotated": false,
+            "trimmed": false,
+            "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 32 },
+            "sourceSize": { "w": 32, "h": 32 }
         }
     },
     "meta": {
